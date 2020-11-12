@@ -177,6 +177,11 @@ def hangman(secret_word):
 
         print('_______________________________________________________')
 
+        if is_word_guessed(secret_word, letters_guessed):
+            print('Congratulation! You win!')
+            break
+
+
 # When you've completed your hangman function, scroll down to the bottom
 # of the file and uncomment the first two lines to test
 #(hint: you might want to pick your own
