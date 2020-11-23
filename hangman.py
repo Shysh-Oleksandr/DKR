@@ -66,11 +66,12 @@ def is_word_guessed(secret_word, letters_guessed):
     returns: boolean, True if all the letters of secret_word are in letters_guessed;
       False otherwise
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
+
+    # If at least one letter in secret word is not in guessed letters, returns False.
     for letter in list(secret_word):
         if letter not in letters_guessed:
             return False
-
+    # Otherwise, returns True.
     return True
 
 
@@ -81,17 +82,19 @@ def get_guessed_word(secret_word, letters_guessed):
     returns: string, comprised of letters, underscores (_), and spaces that represents
       which letters in secret_word have been guessed so far.
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
-    not_guessed_letters = len(secret_word)
-    encrypted_word_list = ('_ ,' * (not_guessed_letters)).split(',')
+    # Makes a list where each element is an encrypted letter.
+    encrypted_word_list = ('_ ,' * (len(secret_word))).split(',')
+    # Makes a blank string.
     encrypted_word = ''
 
+    # If a letter of the secret word is guessed, replaces the underscore with a letter.
     for letter in list(secret_word):
         if letter in letters_guessed:
             indices = [index for index, element in enumerate(secret_word) if element == letter]
             for i in range(len(indices)):
                 encrypted_word_list[indices[i]] = letter
 
+    # Adds all elements of the list to one string.
     for char in encrypted_word_list:
         encrypted_word += char
 
@@ -104,15 +107,19 @@ def get_available_letters(letters_guessed):
     returns: string (of letters), comprised of letters that represents which letters have not
       yet been guessed.
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
-    alphabet = string.ascii_lowercase
+
+    # All alphabet letters in one string.
+    available_letters = string.ascii_lowercase
+
+    # If the letter is guessed, removes it from the list of available letters.
     for letter in letters_guessed:
-        if letter in alphabet:
-            alphabet = alphabet.replace(letter, '')
+        if letter in available_letters:
+            available_letters = available_letters.replace(letter, '')
 
-    return alphabet
+    return available_letters
 
 
+# Secondary functions
 def delimiter():
     """
     prints the dividing line
@@ -143,22 +150,26 @@ def guesses_msg(guesses_remaining, letters_guessed):
     print(f'Available letters: {get_available_letters(letters_guessed)}')
 
 
-def reduce_warnings(guesses_remaining, warnings_remaining):
+def subtract_warnings(guesses_remaining, warnings_remaining):
     """
     guesses_remaining: integer, number of remaining guesses
     warnings_remaining: integer, number of remaining warnings
 
-    Takes away a warning or a guess if there are no warnings left
+    Subtracts a warning or a guess if there are no warnings left
     Returns remaining guesses and warnings
     """
 
+    # If there are not warnings left, subtracts  one guess.
     if warnings_remaining <= 0:
         warnings_remaining -= 1
         guesses_remaining -= 1
-        return (guesses_remaining, warnings_remaining)
+        return guesses_remaining, warnings_remaining
+
+    # Otherwise, subtracts one warning.
     else:
         warnings_remaining -= 1
-    return (guesses_remaining, warnings_remaining)
+
+    return guesses_remaining, warnings_remaining
 
 
 def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed):
@@ -173,28 +184,32 @@ def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed)
     remaining guesses and warnings, message - one of 4 messages depending on the situation
     """
 
+    # Makes four messages: if the entered letter is not valid, is repeated,
+    # the same two cases but there are no warnings left.
     not_valid_msg = "Oops! That is not a valid letter. You have {warnings_remaining} warnings left: {secret_word}"
-    repeat_msg = "Oops! You've already guessed that letter. You have {warnings_remaining} warnings left: {secret_word}"
+    repeated_msg = "Oops! You've already guessed that letter. You have {warnings_remaining} warnings left: {secret_word}"
     no_warns_not_valid_msg = "Oops! That is not a valid letter. You have no warnings left" \
                              " so you lose one guess: {secret_word}"
     no_warns_repeated_msg = "Oops! You've already guessed that letter. You have no warnings left" \
                             " so you lose one guess: {secret_word}"
 
+    # If the letter is not in alphabet or more than one letter is entered, subtracts warning.
     if not letter.isascii() or len(letter) != 1:
-        guesses_remaining, warnings_remaining = reduce_warnings(guesses_remaining, warnings_remaining)
+        guesses_remaining, warnings_remaining = subtract_warnings(guesses_remaining, warnings_remaining)
 
         if warnings_remaining < 0:
             not_valid_msg = no_warns_not_valid_msg
 
         return False, guesses_remaining, warnings_remaining, not_valid_msg
 
+    # If the letter was already named, subtracts warning.
     elif letter in letters_guessed:
-        guesses_remaining, warnings_remaining = reduce_warnings(guesses_remaining, warnings_remaining)
+        guesses_remaining, warnings_remaining = subtract_warnings(guesses_remaining, warnings_remaining)
 
         if warnings_remaining < 0:
-            repeat_msg = no_warns_repeated_msg
+            repeated_msg = no_warns_repeated_msg
 
-        return False, guesses_remaining, warnings_remaining, repeat_msg
+        return False, guesses_remaining, warnings_remaining, repeated_msg
 
     else:
         return True, guesses_remaining, warnings_remaining, None
@@ -206,17 +221,21 @@ def is_in_word(letter, secret_word, guesses_remaining):
     secret_word: string
     guesses_remaining: integer, number of remaining guesses
 
-    Prints whether there is the letter in the secret word and takes away guesses if the letter is not in the secret word
+    Prints whether there is the letter in the secret word and subtracts guesses if the letter is not in the secret word
     Returns remaining guesses
     """
 
+    # If the letter is in the secret word, prints positive message.
     if letter in list(secret_word):
         print("Good guess: ", end='')
 
+    # Otherwise, prints negative message and subtracts guesses.
     else:
         print("Oops! That letter is not in my word: ", end='')
+        # If the letter is a vowel, subtracting two guesses.
         if letter in vowels:
             guesses_remaining -= 2
+        # Otherwise, subtracts one guess.
         else:
             guesses_remaining -= 1
 
@@ -245,10 +264,11 @@ def win_or_lose(secret_word, letters_guessed, guesses_remaining):
     Prints congratulation-message and the score if a user won and sorry-message if a user lost
     """
 
+    # If the word is guessed, prints positive message and the score.
     if is_word_guessed(secret_word, letters_guessed):
         print(f'Congratulations, you won! Your total score for this game '
               f'is: {calc_score(secret_word, guesses_remaining)}')
-
+    # Otherwise, prints negative message.
     else:
         print(f'Sorry, you ran out of guesses. The word was {secret_word}')
 
@@ -256,66 +276,65 @@ def win_or_lose(secret_word, letters_guessed, guesses_remaining):
 def hangman(secret_word, hints_on=False, guesses_remaining=6, warnings_remaining=3):
     """
     secret_word: string, the secret word to guess.
+    hints_on: boolean. True, if you want to play with hints. Default = False
+    guesses_remaining: integer, the number of guesses. Default = 6
+    warnings_remaining: integer, the number of warnings. Default = 3
 
     Starts up an interactive game of Hangman.
-
-    * At the start of the game, let the user know how many
-      letters the secret_word contains and how many guesses s/he starts with.
-
-    * The user should start with 6 guesses
-
-    * Before each round, you should display to the user how many guesses
-      s/he has left and the letters that the user has not yet guessed.
-
-    * Ask the user to supply one guess per round. Remember to make
-      sure that the user puts in a letter!
-
-    * The user should receive feedback immediately after each guess
-      about whether their guess appears in the computer's word.
-
-    * After each guess, you should display to the user the
-      partially guessed word so far.
-
-    Follows the other limitations detailed in the problem write-up.
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
+
+    # Prints welcome-message.
     welcome_msg(secret_word)
 
+    # The game continues until the word is guessed or the guesses end.
     while not is_word_guessed(secret_word, letters_guessed) and guesses_remaining > 0:
+
+        # Prints message about remaining guesses.
         guesses_msg(guesses_remaining, letters_guessed)
 
         while True:
+            # Asks to enter new letter.
             letter = input('Please guess a letter: ').lower()
 
-            # activating hints
+            # If hints is on and user entered asterisk(*), shows possible word variants.
             if hints_on and letter == "*":
                 show_possible_matches(get_guessed_word(secret_word, letters_guessed))
                 guesses_msg(guesses_remaining, letters_guessed)
                 continue
 
+            # Checks the letter for validity.
             is_letter_correct, guesses_remaining, warnings_remaining, msg = check_letter(letter,
                                                                                          guesses_remaining,
                                                                                          warnings_remaining,
                                                                                          letters_guessed)
-
+            # If the letter is valid, exits the loop.
             if is_letter_correct:
                 break
+            # Otherwise, prints message with explanations for incorrect input.
             else:
                 print(msg.format(warnings_remaining=warnings_remaining,
                                  secret_word=get_guessed_word(secret_word, letters_guessed)))
+
+                # If there are no guesses left, exits the loop.
                 if guesses_remaining == 0:
                     break
-                guesses_msg(guesses_remaining, letters_guessed)
+                # Otherwise, prints guesses left.
+                else:
+                    guesses_msg(guesses_remaining, letters_guessed)
 
         if guesses_remaining == 0:
             break
 
+        # Appends letter to list of the guessed letters.
         letters_guessed.append(letter)
 
+        # Updates remaining guesses.
         guesses_remaining = is_in_word(letter, secret_word, guesses_remaining)
+        # Prints the encrypted secret word.
         print(get_guessed_word(secret_word, letters_guessed))
 
     delimiter()
+    # Checks whether the word is guessed or not.
     win_or_lose(secret_word, letters_guessed, guesses_remaining)
 
 
@@ -331,18 +350,20 @@ def match_with_gaps(my_word, other_word):
         _ , and my_word and other_word are of the same length;
         False otherwise:
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
+    # Removes all spaces.
     my_word = my_word.replace(" ", "")
 
+    # If the length of my word is not equal to the length of another word, another word does not fit.
     if len(my_word) != len(other_word):
         return False
 
     else:
         for i in range(len(my_word)):
-
+            # If there are not the same symbols in both words, other word does not fit.
             if my_word[i] != "_" and my_word[i] != other_word[i]:
                 return False
 
+        # Otherwise, It fits.
         return True
 
 
@@ -356,15 +377,20 @@ def show_possible_matches(my_word):
              that has already been revealed.
 
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
+
+    # Creates blank list for possible matches.
     possible_matches_list = []
 
+    # Adds to the list words that may be the same as my word.
     for word in wordlist:
         if match_with_gaps(my_word, word):
             possible_matches_list.append(word)
 
+    # If there is no matches, prints negative message.
     if len(possible_matches_list) == 0:
         print('No matches found')
+
+    # Otherwise, prints positive message and the list of matches.
     else:
         print("Possible word matches are: ", end="")
         print(*possible_matches_list)
@@ -375,36 +401,10 @@ def hangman_with_hints(secret_word):
     secret_word: string, the secret word to guess.
 
     Starts up an interactive game of Hangman.
-
-    * At the start of the game, let the user know how many
-      letters the secret_word contains and how many guesses s/he starts with.
-
-    * The user should start with 6 guesses
-
-    * Before each round, you should display to the user how many guesses
-      s/he has left and the letters that the user has not yet guessed.
-
-    * Ask the user to supply one guess per round. Make sure to check that the user guesses a letter
-
-    * The user should receive feedback immediately after each guess
-      about whether their guess appears in the computer's word.
-
-    * After each guess, you should display to the user the
-      partially guessed word so far.
-
-    * If the guess is the symbol *, print out all words in wordlist that
-      matches the current guessed word.
-
-    Follows the other limitations detailed in the problem write-up.
     """
-    # FILL IN YOUR CODE HERE AND DELETE "pass"
+
+    # Launches the game with hints.
     hangman(secret_word, hints_on=True)
-
-
-# When you've completed your hangman_with_hint function, comment the two similar
-# lines above that were used to run the hangman function, and then uncomment
-# these two lines and run this file to test!
-# Hint: You might want to pick your own secret_word while you're testing.
 
 
 if __name__ == "__main__":
