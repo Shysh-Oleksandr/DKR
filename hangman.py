@@ -360,7 +360,8 @@ def match_with_gaps(my_word, other_word):
     else:
         for i in range(len(my_word)):
             # If there are not the same symbols in both words, other word does not fit.
-            if my_word[i] != "_" and my_word[i] != other_word[i]:
+            if my_word[i] != "_" and (my_word[i] != other_word[i] or
+                                      my_word.count(my_word[i]) != other_word.count(my_word[i])):
                 return False
 
         # Otherwise, It fits.
