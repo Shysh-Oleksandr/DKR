@@ -1,7 +1,7 @@
 # Problem Set 2, hangman.py
 # Name: Oleksandr Shysh
 # Collaborators: -
-# Time spent: 5 days (about 16 hours)
+# Time spent: 5 days (about 17 hours)
 
 # Hangman Game
 
@@ -14,6 +14,7 @@ WORDLIST_FILENAME = "words.txt"
 GUESSES = 6
 WARNINGS = 3
 VOWELS = set('aeiou')
+HINT = '*'
 
 
 def load_words():
@@ -98,13 +99,16 @@ def get_available_letters(letters_guessed):
       yet been guessed.
     """
 
-    # Makes all alphabet letters in one string.
-    alphabet = set(string.ascii_lowercase)
+    # Makes a list of all alphabet letters.
+    alphabet = list(string.ascii_lowercase)
 
     # Makes a list of all letters which user hasn't entered yet.
-    available_letters = list(alphabet - letters_guessed)
-    # Sorts them by alphabet.
-    available_letters.sort()
+    available_letters = list()
+
+    # Adds a letter to the list if user didn't enter it.
+    for letter in alphabet:
+        if letter not in letters_guessed:
+            available_letters.append(letter)
 
     # Makes a string from the list and returns it.
     return ''.join(available_letters)
@@ -188,7 +192,7 @@ def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed)
                             " so you lose one guess: {secret_word}"
 
     # If the letter is not in alphabet or more than one letter is entered, subtracts warning.
-    if (not letter.isalpha() and letter != "*") or len(letter) != 1:
+    if (not letter.isalpha() and letter != HINT) or len(letter) != 1:
         guesses_remaining, warnings_remaining = subtract_warnings(guesses_remaining, warnings_remaining)
 
         if warnings_remaining < 0:
@@ -314,18 +318,19 @@ def hangman(secret_word, hints_on=False):
         # Asks to enter new letter.
         letter = input('Please guess a letter: ').lower()
 
+        # If hints is on and user entered asterisk(*), shows possible word variants.
+        if hints_on and letter == HINT:
+            show_possible_matches(get_guessed_word(secret_word, letters_guessed))
+            continue
+
         # Checks the letter for validity.
         is_letter_correct, guesses_remaining, warnings_remaining, msg = check_letter(letter,
                                                                                      guesses_remaining,
                                                                                      warnings_remaining,
                                                                                      letters_guessed)
 
-        # If hints is on and user entered asterisk(*), shows possible word variants.
-        if hints_on and letter == "*":
-            show_possible_matches(get_guessed_word(secret_word, letters_guessed))
-
         # If the letter is incorrect, prints message with explanations for incorrect input.
-        elif not is_letter_correct:
+        if not is_letter_correct:
             print(msg.format(warnings_remaining=warnings_remaining,
                              secret_word=get_guessed_word(secret_word, letters_guessed)))
 
@@ -356,15 +361,14 @@ def match_with_gaps(my_word, other_word):
     if len(my_word) != len(other_word):
         return False
 
-    else:
-        for i in range(len(my_word)):
-            # If there are not the same symbols in both words, other word does not fit.
-            if my_word[i] != "_" and (my_word[i] != other_word[i] or
-                                      my_word.count(my_word[i]) != other_word.count(my_word[i])):
-                return False
+    for i in range(len(my_word)):
+        # If there are not the same symbols in both words, other word does not fit.
+        if my_word[i] != "_" and (my_word[i] != other_word[i] or
+                                  my_word.count(my_word[i]) != other_word.count(my_word[i])):
+            return False
 
-        # Otherwise, It fits.
-        return True
+    # Otherwise, It fits.
+    return True
 
 
 def show_possible_matches(my_word):
