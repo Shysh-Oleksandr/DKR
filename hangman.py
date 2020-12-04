@@ -15,6 +15,7 @@ GUESSES = 6
 WARNINGS = 3
 VOWELS = set('aeiou')
 HINT = '*'
+ENCRYPTION_SYMBOL = '_'
 
 
 def load_words():
@@ -60,7 +61,7 @@ def is_word_guessed(secret_word, letters_guessed):
     """
 
     # If at least one letter in secret word is not in guessed letters, returns False.
-    for letter in list(secret_word):
+    for letter in secret_word:
         if letter not in letters_guessed:
             return False
     # Otherwise, returns True.
@@ -163,8 +164,7 @@ def subtract_warnings(guesses_remaining, warnings_remaining):
         return guesses_remaining, warnings_remaining
 
     # Otherwise, subtracts one warning.
-    else:
-        warnings_remaining -= 1
+    warnings_remaining -= 1
 
     return guesses_remaining, warnings_remaining
 
@@ -209,8 +209,7 @@ def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed)
 
         return False, guesses_remaining, warnings_remaining, repeated_msg
 
-    else:
-        return True, guesses_remaining, warnings_remaining, None
+    return True, guesses_remaining, warnings_remaining, None
 
 
 def is_in_word(letter, secret_word, guesses_remaining, letters_guessed):
@@ -363,7 +362,7 @@ def match_with_gaps(my_word, other_word):
 
     for i in range(len(my_word)):
         # If there are not the same symbols in both words, other word does not fit.
-        if my_word[i] != "_" and (my_word[i] != other_word[i] or
+        if my_word[i] != ENCRYPTION_SYMBOL and (my_word[i] != other_word[i] or
                                   my_word.count(my_word[i]) != other_word.count(my_word[i])):
             return False
 
