@@ -192,7 +192,7 @@ def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed)
                             " so you lose one guess: {secret_word}"
 
     # If the letter is not in alphabet or more than one letter is entered, subtracts warning.
-    if (not letter.isalpha() and letter != HINT) or len(letter) != 1:
+    if (letter not in string.ascii_lowercase and letter != HINT) or len(letter) != 1:
         guesses_remaining, warnings_remaining = subtract_warnings(guesses_remaining, warnings_remaining)
 
         if warnings_remaining < 0:
@@ -363,7 +363,7 @@ def match_with_gaps(my_word, other_word):
     for i in range(len(my_word)):
         # If there are not the same symbols in both words, other word does not fit.
         if my_word[i] != ENCRYPTION_SYMBOL and (my_word[i] != other_word[i] or
-                                  my_word.count(my_word[i]) != other_word.count(my_word[i])):
+                                                my_word.count(my_word[i]) != other_word.count(my_word[i])):
             return False
 
     # Otherwise, It fits.
