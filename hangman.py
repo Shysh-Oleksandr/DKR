@@ -192,7 +192,7 @@ def check_letter(letter, guesses_remaining, warnings_remaining, letters_guessed)
                             " so you lose one guess: {secret_word}"
 
     # If the letter is not in alphabet or more than one letter is entered, subtracts warning.
-    if (letter not in string.ascii_lowercase and letter != HINT) or len(letter) != 1:
+    if (not letter.isascii() or not letter.isalpha() and letter != HINT) or len(letter) != 1:
         guesses_remaining, warnings_remaining = subtract_warnings(guesses_remaining, warnings_remaining)
 
         if warnings_remaining < 0:
