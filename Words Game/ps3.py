@@ -1,6 +1,6 @@
 # Name          : Oleksandr Shysh
 # Collaborators : -
-# Time spent    : Three days(15 hours)
+# Time spent    : Four days(18 hours)
 
 # Imports modules.
 import math
@@ -12,6 +12,7 @@ VOWELS = 'aeiou'
 CONSONANTS = 'bcdfghjklmnpqrstvwxyz'
 HAND_SIZE = 7
 WILDCARD = '*'
+STOP_SYMBOL = '!!'
 
 SCRABBLE_LETTER_VALUES = {
     'a': 1, 'b': 3, 'c': 3, 'd': 2, 'e': 1, 'f': 4, 'g': 2, 'h': 4, 'i': 1, 'j': 8, 'k': 5, 'l': 1, 'm': 3, 'n': 1,
@@ -83,21 +84,21 @@ def get_word_score(word, n):
     returns: int >= 0
     """
 
-    word_score1 = 0
+    first_component = 0
     handlen = len(word)  # The length of the word.
 
     # Calculates the sum of the points for letters in the word.
     for letter in word.lower():
-        word_score1 += SCRABBLE_LETTER_VALUES[letter]
+        first_component += SCRABBLE_LETTER_VALUES[letter]
 
     # Calculates the second component.
-    word_score2 = 7 * handlen - 3 * (n - handlen)
+    second_component = HAND_SIZE * handlen - 3 * (n - handlen)
     # If it is less than one, the second component becomes one.
-    if word_score2 < 1:
-        word_score2 = 1
+    if second_component < 1:
+        second_component = 1
 
     # Calculates the final score.
-    final_score = word_score1 * word_score2
+    final_score = first_component * second_component
 
     return final_score
 
@@ -143,7 +144,7 @@ def deal_hand(n):
         x = random.choice(VOWELS)
         hand[x] = hand.get(x, 0) + 1
 
-    hand[WILDCARD] = hand.get(WILDCARD, 0) + 1
+    hand[WILDCARD] = 1
 
     for i in range(num_vowels, n):
         x = random.choice(CONSONANTS)
@@ -178,6 +179,9 @@ def update_hand(hand, word):
     # Makes the number of occurrences of letters, that was used in the word, equal to zero.
     for letter in hand:
         new_hand[letter] = hand[letter] - word_frequency_dict.get(letter, 0)
+        # If a letter is not in a hand but was used, makes it equal to zero.
+        if new_hand[letter] < 0:
+            new_hand[letter] = 0
 
     # Returns the new hand.
     return new_hand
@@ -197,18 +201,8 @@ def is_valid_word(word, hand, word_list):
 
     # If there is the wildcard(asterisk) in the word.
     if WILDCARD in word:
-        pattern = re.compile(word.replace(WILDCARD, '.'))
-        # Finds the index of the wildcard.
-        index = word.index(WILDCARD)
-        # Checks if a word can be match.
-        for w in word_list:
-            match = pattern.match(w)
-            # If the wildcard is replaced with a vowel.
-            if match and match.group(0)[index] in VOWELS:
-                break  # If a match is found, aborts the search.
-
-        # If nothing was found, returns False.
-        else:
+        # If no matches found, the word does not exist, so returns False.
+        if not is_match(word, word_list):
             return False
 
     # If there is not the wildcard(asterisk) in the word, checks if the word exists.
@@ -235,12 +229,33 @@ def calculate_handlen(hand):
     returns: integer
     """
 
-    length = 0
     # Counts the number of occurrences of each letter in the word and adds together.
-    for letter in hand.keys():
-        length += hand.get(letter, 0)
+    length = sum(hand.values())
 
     return length
+
+
+def is_match(word, word_list):
+    """
+    Returns True, if a match is found(the wildcard is replaced by a vowel gives a valid word).
+    Otherwise, returns False.
+
+    word: string
+    word_list: list of lowercase strings
+    returns: boolean
+    """
+
+    # Creates a pattern to find match.
+    pattern = re.compile(word.replace(WILDCARD, '[aeiouAEIOU]'))
+    # Checks if a word can be match.
+    for w in word_list:
+        match = pattern.search(w)
+        # If a match is found, aborts the search and returns True.
+        if bool(match):
+            return True
+
+    # If no matches found, returns False.
+    return False
 
 
 def ask_user(prompt, **kwargs):
@@ -257,23 +272,20 @@ def ask_user(prompt, **kwargs):
     # Allows to enter value until it gets the right one.
     while True:
         answer = input(prompt)
-        try:
-            for key, value in kwargs.items():
-                # If the function calls with validator or values parameter, checks the input.
-                if (key == 'validator' and not value(answer) or
-                        (key == 'values' and answer.lower() not in value)):
-                    # If an error detected, prints warning message.
-                    raise ValueError
-            # If there is no problems, interrupts the loop.
-            break
-        # If an error happens, shows a warning message.
-        except ValueError:
-            # If a warning message is described in the function calling, prints it.
-            if 'warn_msg' in kwargs.keys():
+
+        # If the function calls with validator or values parameter, checks the input.
+        if (('validator' in kwargs and not kwargs['validator'](answer)) or
+                ('values' in kwargs and answer not in kwargs['values'])):
+            # If an error happens, shows a warning message.
+            if 'warn_msg' in kwargs:  # If a warning message is described in the function calling, prints it.
                 print(kwargs['warn_msg'])
             # Otherwise, prints usual warnings message.
             else:
                 print("That is not valid value")
+
+        # If there is no problems, interrupts the loop.
+        else:
+            break
 
     return answer
 
@@ -293,12 +305,14 @@ def calc_word_score(hand, word, total_score):
     if is_valid_word(word, hand, word_list):
         # Tells the user how many points the word earned, and the updated total score.
         total_score += get_word_score(word, calculate_handlen(hand))
-        print(f'"{word}" earned {str(get_word_score(word, calculate_handlen(hand)))} points. '
-              f'Total: {str(total_score)} points\n')
+        print(f'"{word}" earned {get_word_score(word, calculate_handlen(hand))} points. '
+              f'Total: {total_score} points')
+        print()
     # Otherwise (the word is not valid):
     else:
         # Rejects invalid word (prints a message).
-        print("This is not a valid word. Please choose another word.\n")
+        print("This is not a valid word. Please choose another word.")
+        print()
 
     return total_score
 
@@ -316,7 +330,7 @@ def print_score(hand, total_score):
     if calculate_handlen(hand) == 0:
         print("Ran out of letters.")
     # so tell user the total score
-    print(f"Total score for this hand: {str(total_score)}")
+    print(f"Total score for this hand: {total_score}")
     print("--------")
 
 
@@ -335,12 +349,12 @@ def input_substitute(hand, ask_substitute):
                              warn_msg='You need to enter "yes" or "no"')
 
     # If a user agreed, asks which letter to replace.
-    if to_substitute.lower() == 'yes':
+    if to_substitute == 'yes':
         letter = ask_user('Which letter would you like to replace: ',
                           validator=lambda ans: (ans.lower() in CONSONANTS or ans.lower() in VOWELS) and len(ans) == 1,
                           warn_msg="You need to enter a single Latin letter")
         # Substitutes the letter.
-        hand = substitute_hand(hand, letter)
+        hand = substitute_hand(hand, letter.lower())
         # Does not allow to do it again(does not ask it again).
         ask_substitute = False
 
@@ -362,7 +376,7 @@ def input_replay(hand, ask_substitute, ask_replay):
                          values=('yes', 'no'),
                          warn_msg='You need to enter "yes" or "no"')
 
-    if to_replay.lower() == 'yes':
+    if to_replay == 'yes':
         # Does not allow to do it again(does not ask it again).
         ask_replay = False
         # Displays the hand, if the substitute was not used.
@@ -378,7 +392,7 @@ def add_guessed_word(hand, ask_replay, total_list, replayed):
     If a hand was replayed, adds to the list of guessed words the biggest of two scores.
 
     ask_replay: bool, denotes if the program should ask user for replaying or not.
-    total_list: list, a list of guessed words.
+    total_list: list, a list of scores.
     replayed: bool, denotes if the replay was already used.
 
     Returns: total_list: list, replayed: bool.
@@ -397,6 +411,46 @@ def add_guessed_word(hand, ask_replay, total_list, replayed):
         total_list.append(play_hand(hand, word_list))
 
     return total_list, replayed
+
+
+def sum_total_score(total_list, total):
+    """
+    Sums all hand scores and returns total score.
+
+    total_list: list, a list of scores.
+    total: integer, the sum of all scores.
+
+    Returns total: integer.
+    """
+
+    # Adds each score from the list to the total.
+    for score in total_list:
+        total += score
+    # Prints the total score.
+    print(f"Total score over all hands: {total}")
+    return total
+
+
+def deal_new_hand(hand, hands, ask_substitute):
+    """
+    Deals new hand, subtracts a hand from remaining hands.
+
+    hand: dictionary (string -> int)
+    hands: integer, the number of remaining hands to play.
+    ask_substitute: bool, denotes if the substitute was already used.
+
+    Returns hand: dictionary (string -> int), hands: integer.
+    """
+
+    # Creates a new hand.
+    hand = deal_hand(HAND_SIZE)
+    # Subtracts a hand after it was played.
+    hands -= 1
+    # Prints a new hand.
+    if hands > 0 and ask_substitute:
+        display_hand(hand)
+
+    return hand, hands
 
 
 def play_hand(hand, word_list):
@@ -437,7 +491,7 @@ def play_hand(hand, word_list):
         # Asks user for input.
         word = ask_user("Enter word, or “!!” to indicate that you are finished: ")
         # If the input is two exclamation points:
-        if word == "!!":
+        if word == STOP_SYMBOL:
             break  # Ends the game (breaks out of the loop)
 
         # Otherwise (the input is not two exclamation points).
@@ -479,18 +533,15 @@ def substitute_hand(hand, letter):
     # Copies the hand to not mutate it.
     new_hand = hand.copy()
 
-    # Creates a string with letters in the hand.
-    existed_hand = ''.join(hand.keys())
-    # Creates a list of the not used letters and adds the unused vowels.
-    not_used_letters = [item for item in VOWELS if item not in existed_hand]
-
-    for consonant in CONSONANTS:
-        # If a consonant is unused, adds each one to the list of the unused letters.
-        if consonant not in existed_hand:
-            not_used_letters.append(consonant)
-
     # If the letter user wants to replace is in the hand, substitutes it with a random unused letter.
     if letter in hand.keys():
+        # Creates a set of letters in the hand.
+        existed_hand = set(hand.keys())
+        # Creates a set of all alphabetic letters.
+        all_letters = set(CONSONANTS + VOWELS)
+        # Creates a list of the not used letters.
+        not_used_letters = [item for item in all_letters if item not in existed_hand]
+
         # Chooses random letter.
         new_letter = random.choice(not_used_letters)
         # Substitutes the letter.
@@ -535,13 +586,9 @@ def play_game(word_list):
     # Creates a hand.
     hand = deal_hand(HAND_SIZE)
     # Allows to substitute a letter or replay a hand.
-    ask_substitute = True
-    ask_replay = True
-    replayed = True
+    ask_substitute, ask_replay, replayed = True, True, True
     # A list of guessed letters.
     total_list = []
-    # The total score.
-    total = 0
 
     # Asks for entering the number of hands.
     hands = int(ask_user("Enter total number of hands: ", validator=lambda ans: ans.isdigit() and int(ans) > 0,
@@ -563,20 +610,11 @@ def play_game(word_list):
             ask_replay = input_replay(hand, ask_substitute, ask_replay)
             if not ask_replay:
                 continue
-
-        # Creates a new hand.
-        hand = deal_hand(HAND_SIZE)
-        # Subtracts a hand after it was played.
-        hands -= 1
-        # Prints a new hand.
-        if hands > 0 and ask_substitute:
-            display_hand(hand)
+        # Deals new hand, subtracts a hand from remaining hands.
+        hand, hands = deal_new_hand(hand, hands, ask_substitute)
 
     # Adds each score from the list to the total.
-    for score in total_list:
-        total += score
-    # Prints the total score.
-    print(f"Total score over all hands: {total}")
+    total = sum_total_score(total_list, 0)
     return total
 
 
