@@ -16,7 +16,7 @@ STOP_SYMBOL = '!!'
 
 SCRABBLE_LETTER_VALUES = {
     'a': 1, 'b': 3, 'c': 3, 'd': 2, 'e': 1, 'f': 4, 'g': 2, 'h': 4, 'i': 1, 'j': 8, 'k': 5, 'l': 1, 'm': 3, 'n': 1,
-    'o': 1, 'p': 3, 'q': 10, 'r': 1, 's': 1, 't': 1, 'u': 1, 'v': 4, 'w': 4, 'x': 8, 'y': 4, 'z': 10, '*': 0
+    'o': 1, 'p': 3, 'q': 10, 'r': 1, 's': 1, 't': 1, 'u': 1, 'v': 4, 'w': 4, 'x': 8, 'y': 4, 'z': 10
 }
 
 WORDLIST_FILENAME = "words.txt"
@@ -85,14 +85,15 @@ def get_word_score(word, n):
     """
 
     first_component = 0
-    handlen = len(word)  # The length of the word.
+    hand_length = len(word)  # The length of the word.
 
     # Calculates the sum of the points for letters in the word.
     for letter in word.lower():
-        first_component += SCRABBLE_LETTER_VALUES[letter]
+        if letter != WILDCARD:
+            first_component += SCRABBLE_LETTER_VALUES[letter]
 
     # Calculates the second component.
-    second_component = HAND_SIZE * handlen - 3 * (n - handlen)
+    second_component = HAND_SIZE * hand_length - 3 * (n - hand_length)
     # If it is less than one, the second component becomes one.
     if second_component < 1:
         second_component = 1
@@ -118,7 +119,7 @@ def display_hand(hand):
 
     print('Current hand: ', end='')
     for letter in hand.keys():
-        for j in range(hand[letter]):
+        for _ in range(hand[letter]):
             print(letter, end=' ')  # print all on the same line
     print()  # print an empty line
 
@@ -199,15 +200,8 @@ def is_valid_word(word, hand, word_list):
     returns: boolean
     """
 
-    # If there is the wildcard(asterisk) in the word.
-    if WILDCARD in word:
-        # If no matches found, the word does not exist, so returns False.
-        if not is_match(word, word_list):
-            return False
-
-    # If there is not the wildcard(asterisk) in the word, checks if the word exists.
-    elif word.lower() not in word_list:
-        return False  # If the word does not exist, returns False.
+    if not is_match(word, word_list):
+        return False
 
     # Converts the word to dictionary(string -> int), same as hand.
     word_frequency_dict = get_frequency_dict(word.lower())
@@ -246,12 +240,12 @@ def is_match(word, word_list):
     """
 
     # Creates a pattern to find match.
-    pattern = re.compile(word.replace(WILDCARD, '[aeiouAEIOU]'))
+    pattern = re.compile(word.replace(WILDCARD, f'[{VOWELS}]'))
     # Checks if a word can be match.
     for w in word_list:
-        match = pattern.search(w)
+        match = pattern.fullmatch(w)
         # If a match is found, aborts the search and returns True.
-        if bool(match):
+        if match:
             return True
 
     # If no matches found, returns False.
@@ -528,13 +522,10 @@ def substitute_hand(hand, letter):
     returns: dictionary (string -> int)
     """
 
-    # Makes the letter small.
-    letter = letter.lower()
-    # Copies the hand to not mutate it.
-    new_hand = hand.copy()
-
     # If the letter user wants to replace is in the hand, substitutes it with a random unused letter.
     if letter in hand.keys():
+        # Copies the hand to not mutate it.
+        new_hand = hand.copy()
         # Creates a set of letters in the hand.
         existed_hand = set(hand.keys())
         # Creates a set of all alphabetic letters.
